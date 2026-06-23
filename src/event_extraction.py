@@ -120,9 +120,7 @@ def extract_variation(
     t_before = event_ts - pd.Timedelta(minutes=event.window_minutes)
     t_after = event_ts + pd.Timedelta(minutes=event.window_minutes)
 
-    mid_before, before_observed = _median_between(
-        resampled, t_before, event_ts
-    )
+    mid_before, before_observed = _median_between(resampled, t_before, event_ts)
 
     mid_after, after_observed = _median_between(
         resampled,
@@ -136,7 +134,7 @@ def extract_variation(
     #         asset_name, maturity, event_ts, before_observed, after_observed,
     #     )
 
-    if asset_type is AssetType.PRICE_PCT:
+    if asset_type in (AssetType.PRICE_PCT, AssetType.STX50):
         variation = (mid_after - mid_before) / mid_before * 100.0
         unit = "pct"
     else:

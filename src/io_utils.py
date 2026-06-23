@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 # MATURITY est typiquement \d+[A-Za-z]+ (10Y, 1M, 6M...).
 
 _FILENAME_RE = re.compile(
-    r"^(?P<name>(?:[A-Za-z0-9]+|[A-Za-z0-9]+_ILS))"
-    r"(?:_(?P<maturity>\d+[A-Za-z]+))?"
-    r"_(?P<period>\d{4}-\d{4})"
+    r"^(?P<name>[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*?)"
+    r"_(?:(?P<maturity>\d+[A-Za-z]+)_)?"
+    r"(?P<period>\d{4}-\d{4})"
     r"\.csv\.gz$"
 )
 
@@ -74,7 +74,7 @@ _CANONICAL_COLUMNS: dict[AssetType, tuple[str, str]] = {
     AssetType.RATE_LEVEL: ("Close Bid", "Close Ask"),
     AssetType.RATE_YIELD: ("Close Bid Yld", "Close Ask Yld"),
     AssetType.PRICE_PCT: ("Close Bid", "Close Ask"),
-    AssetType.STX50 : ("Last", "Last"),
+    AssetType.STX50: ("Last", "Last"),
 }
 
 
@@ -104,21 +104,27 @@ def load_raw_csv(path: str | Path, meta: Optional[FileMeta] = None) -> pd.DataFr
     # On suppose les timestamps déjà en UTC (GMT Offset == 0 dans tous les
     # exemples fournis). On vérifie plutôt que de supposer silencieusement :
     # un GMT Offset non nul invaliderait la conversion directe en UTC.
-    offsets = df["GMT Offset"].dropna().unique()
-    if len(offsets) != 0 and set(offsets) != {0}:
-        df["Date-Time"] = pd.to_datetime(df["Date-Time"], errors="coerce")
-        df["GMT Offset"] = pd.to_numeric(df["GMT Offset"], errors="coerce")
+    offsets = pd.to_numeric(df["GMT Offset"], errors="coerce")
+    unique_offsets = offsets.dropna().unique()
 
-        # Si GMT Offset est exprimé en heures, ex: 1, -5, 0
-        df["timestamp"] = df["Date-Time"] - pd.to_timedelta(df["GMT Offset"], unit="h")
+    if len(unique_offsets) != 0 and set(unique_offsets) != {0}:
+        parsed = pd.to_datetime(df["Date-Time"], errors="coerce")
+        if parsed.dt.tz is not None:
+            parsed = parsed.dt.tz_convert("UTC").dt.tz_localize(None)
+
+        # Si GMT Offset est exprimé en heures, ex: 1, -5, 0,
+        # Date-Time est en heure locale ; on retire l'offset pour obtenir UTC.
+        utc_naive = parsed - pd.to_timedelta(offsets, unit="h")
+        df["timestamp"] = pd.to_datetime(utc_naive, utc=True)
 
         logger.info(
             "%s: conversion des timestamps en GMT/UTC appliquée via 'GMT Offset' (%s).",
             meta.path,
-            offsets,
+            unique_offsets,
         )
+    else:
+        df["timestamp"] = pd.to_datetime(df["Date-Time"], utc=True)
 
-    df["timestamp"] = pd.to_datetime(df["Date-Time"], utc=True)  
     bid_col, ask_col = _CANONICAL_COLUMNS[meta.asset_type]
     for col in (bid_col, ask_col):
         if col not in df.columns:

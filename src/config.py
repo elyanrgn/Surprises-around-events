@@ -31,7 +31,7 @@ class AssetType(Enum):
     RATE_YIELD = "rate_yield"  # défaut (ex: AT_10Y) : Close Bid Yld / Close Ask Yld
     # SX7E, EURUSD, EURGBP, EURJPY : Close Bid / Close Ask = prix
     PRICE_PCT = "price_pct"
-    STX50 = "price_pct"  # Needs its own type cause Last column is used
+    STX50 = "stx50_last"  # type dédié : extraction depuis la colonne Last
 
 
 # Préfixes de nom de fichier (comparaison insensible à la casse, sur le nom
@@ -46,8 +46,13 @@ PRICE_PCT_PREFIXES: tuple[str, ...] = (
     "EURJPY",
 )
 
-STX50_PREFIXES: tuple[str, ...] = ("EUROSTOXX50")
-RATE_LEVEL_NAMES: tuple[str, ...] = ("EONIA", "ESTR", "OIS", "EA_ILS")
+STX50_PREFIXES: tuple[str, ...] = ("EUROSTOXX50",)
+RATE_LEVEL_NAMES: tuple[str, ...] = (
+    "EONIA",
+    "ESTR",
+    "OIS",
+    "EA_ILS",
+)
 
 # Table d'override explicite : nom_instrument -> AssetType, pour les cas
 # où la classification automatique par préfixe serait fausse. À étendre

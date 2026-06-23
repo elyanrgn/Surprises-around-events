@@ -35,7 +35,7 @@ def _raw_spread(df: pd.DataFrame, asset_type: AssetType) -> pd.Series:
 
 def _spread_bp(df: pd.DataFrame, asset_type: AssetType) -> pd.Series:
     spread_raw = _raw_spread(df, asset_type)
-    if asset_type is AssetType.PRICE_PCT:
+    if asset_type in (AssetType.PRICE_PCT, AssetType.STX50):
         mid = (df["ask"] + df["bid"]) / 2.0
         return spread_raw / mid * 10_000.0
     return spread_raw * 100.0
@@ -56,7 +56,9 @@ def filter_zero_quotes(df: pd.DataFrame, _: FilterConfig) -> tuple[pd.DataFrame,
 
 
 def filter_negative_spread(
-    df: pd.DataFrame, asset_type: AssetType, _: FilterConfig,
+    df: pd.DataFrame,
+    asset_type: AssetType,
+    _: FilterConfig,
 ) -> tuple[pd.DataFrame, int]:
     """Retire les entrées où ask < bid (spread négatif), sans
     conversion d'unité nécessaire puisque c'est un simple test de signe."""
