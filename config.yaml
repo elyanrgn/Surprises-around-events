@@ -1,0 +1,33 @@
+# Configuration du pipeline d'extraction de variations haute fréquence.
+# Modifie ce fichier (pas le code) pour changer d'événement, d'instrument
+# ou de seuils de filtrage.
+
+# --- Entrées / sorties ---
+data_root: data                      # dossier racine contenant Data_AAAA-AAAA/*.csv.gz
+events_csv: events.csv          # liste des événements à étudier (voir data_events_example.csv)
+output: output/HICP_surprises.csv       # résultat : une ligne par (instrument, événement)
+log_file: output/run.log            # log complet de l'exécution (utile en cas de problème)
+log_level: INFO                      # DEBUG pour plus de détails
+
+# --- Événements : valeurs par défaut si absentes du CSV ---
+default_tz: Europe/Brussels
+default_window_minutes: 60
+
+# --- Étape 4 : staleness maximale du forward-fill (minutes). null = illimité ---
+max_gap_minutes: null
+
+# --- Étape 3 : seuils de filtrage ---
+spread_median_multiplier: 150.0
+max_abs_spread_bp: 2500.0
+mad_window: 50
+mad_multiplier: 10.0
+min_obs_for_daily_median: 5
+
+# --- Étape 1 : splicing EONIA -> OIS -> ESTR ---
+ois_cutover_date: "2019-10-01"
+ois_spread_bp: 8.5
+
+# --- Cache : évite de recalculer le nettoyage/filtrage à chaque run ---
+use_cache: false
+cache_dir: None
+force_recompute: false               # true pour ignorer le cache une fois (ex: après avoir changé un seuil)
